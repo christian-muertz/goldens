@@ -121,8 +121,8 @@ extension GoldenWidgetTester on WidgetTester {
   /// to a size where all finite scrollables are fully extended and then sets the surface to a size that is
   /// accepted by the given [constraints].
   Future<void> expandSurfaceWithinConstraints(List<ScrollableState> scrollables, BoxConstraints constraints) async {
-    final double startWidth = constraints.smallest.width == 0 ? 100 : constraints.smallest.width;
-    final double startHeight = constraints.smallest.height == 0 ? 100 : constraints.smallest.height;
+    final double startWidth = constraints.smallest.width == 0 ? 300 : constraints.smallest.width;
+    final double startHeight = constraints.smallest.height == 0 ? 300 : constraints.smallest.height;
 
     await setSurfaceAndPump(Size(startWidth, startHeight));
 
@@ -353,13 +353,16 @@ class GoldenInputMatcher extends AsyncMatcher {
     final List<GoldenMatchInput> inputs = item as List<GoldenMatchInput>;
 
     for (GoldenMatchInput input in inputs) {
+      // We prime once before layout here and once after.
+      await Goldens.configuration.primeAssets?.call(input.tester);
+
       if (input.shrink != null) {
         await input.tester.shrinkSurfaceWithinConstraints(input.shrink, input.configuration.constraints);
       } else if (input.scrollables != null) {
         await input.tester.expandSurfaceWithinConstraints(input.scrollables, input.configuration.constraints);
       } else {
         final List<ScrollableState> scrollableStates = find
-            .byType(Scrollable)
+            .byType(Scrollable, skipOffstage: false)
             .evaluate()
             .map<ScrollableState>((Element element) {
               return (element as StatefulElement).state as ScrollableState;
