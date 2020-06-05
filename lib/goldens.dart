@@ -25,10 +25,9 @@ class Goldens {
   static void configure(GoldensConfiguration configuration) {
     _configuration = configuration;
 
-//    if (configuration.baseDir != null) {
-//      print('Configure golden base dir ${configuration.baseDir}');
-//      goldenFileComparator = _BaseDirComparator(configuration.baseDir);
-//    }
+    if (configuration.baseDir != null) {
+      goldenFileComparator = _BaseDirComparator(configuration.baseDir);
+    }
   }
 }
 
@@ -99,11 +98,11 @@ class TestAssetBundle extends CachingAssetBundle {
   Future<ByteData> load(String key) async => rootBundle.load(key);
 }
 
-
 extension GoldenWidgetTester on WidgetTester {
   /// Pumps the given widget wrapped in a repaint boundary and a [TestAssetBundle].
-  Future<void> pumpGoldenWidget(Widget widget) {
-    return pumpWidget(DefaultAssetBundle(
+  Future<void> pumpGoldenWidget(Widget widget) async {
+    await binding.setSurfaceSize(Size(1000, 1000));
+    return await pumpWidget(DefaultAssetBundle(
       bundle: TestAssetBundle(),
       child: RepaintBoundary(
         child: widget,
@@ -159,7 +158,7 @@ extension GoldenWidgetTester on WidgetTester {
     Finder shrink,
     Finder finder,
   }) {
-    assert(shrink != null || expand == true, 'Shrinking and expanding at the same time makes to sense');
+    assert(shrink == null || expand != true, 'Shrinking and expanding at the same time makes to sense');
 
     return configurations
         .map<GoldenMatchInput>((GoldenConfiguration config) => GoldenMatchInput(
@@ -174,6 +173,8 @@ extension GoldenWidgetTester on WidgetTester {
   }
 }
 
+enum Orientation { portrait, landscape }
+
 /// Describes the configuration for a single golden test.
 ///
 /// The configuration includes [constraints] in which must be respected by the output file. In addition
@@ -186,6 +187,7 @@ class GoldenConfiguration {
     this.pixelRatio,
     this.textScaleFactor,
     this.locale,
+    this.orientation,
   });
 
   final String name;
@@ -201,6 +203,92 @@ class GoldenConfiguration {
   final double pixelRatio;
   final double textScaleFactor;
   final Locale locale;
+  final Orientation orientation;
+
+  GoldenConfiguration looseHeight({double minHeight, double maxHeight}) {
+    return copyWith(
+      constraints: constraints.copyWith(minHeight: minHeight ?? 0, maxHeight: maxHeight ?? double.infinity),
+    );
+  }
+
+  GoldenConfiguration looseWidth({double minWidth, double minHeight}) {
+    return copyWith(
+      constraints: constraints.copyWith(minWidth: minWidth ?? 0, minHeight: minHeight ?? double.infinity),
+    );
+  }
+
+  GoldenConfiguration copyWith({
+    String name,
+    BoxConstraints constraints,
+    double pixelRatio,
+    double textScaleFactor,
+    Locale locale,
+    Orientation orientation,
+  }) {
+    return GoldenConfiguration(
+      name: name ?? this.name,
+      constraints: constraints ?? this.constraints,
+      pixelRatio: pixelRatio ?? this.pixelRatio,
+      textScaleFactor: textScaleFactor ?? this.textScaleFactor,
+      locale: locale ?? this.locale,
+      orientation: orientation ?? this.orientation,
+    );
+  }
+}
+
+class GoldenDevice extends GoldenConfiguration {
+  GoldenDevice({
+    String name,
+    BoxConstraints constraints,
+    double pixelRatio,
+    double textScaleFactor,
+    Locale locale,
+    this.orientation,
+  }) : super(
+          name: name,
+          constraints: constraints,
+          pixelRatio: pixelRatio,
+          textScaleFactor: textScaleFactor,
+          locale: locale,
+        );
+
+  final Orientation orientation;
+
+  GoldenDevice portrait() {
+    assert(constraints.isTight);
+
+    final double width = constraints.smallest.shortestSide;
+    final double height = constraints.smallest.longestSide;
+
+    return copyWith(constraints: BoxConstraints.tight(Size(width, height)), orientation: Orientation.portrait);
+  }
+
+  GoldenDevice landscape() {
+    assert(constraints.isTight);
+
+    final double width = constraints.smallest.longestSide;
+    final double height = constraints.smallest.shortestSide;
+
+    return copyWith(constraints: BoxConstraints.tight(Size(width, height)), orientation: Orientation.landscape);
+  }
+
+  GoldenConfiguration copyWith({
+    String name,
+    BoxConstraints constraints,
+    double pixelRatio,
+    double textScaleFactor,
+    Locale locale,
+    Orientation orientation,
+  }) {
+    return GoldenDevice(
+      name: name ?? this.name,
+      constraints: constraints ?? this.constraints,
+      pixelRatio: pixelRatio ?? this.pixelRatio,
+      textScaleFactor: textScaleFactor ?? this.textScaleFactor,
+      locale: locale ?? this.locale,
+      orientation: orientation ?? this.orientation,
+    );
+  }
 }
 
 /// A input which can be passed to [matchGoldenFiles].
@@ -241,6 +329,11 @@ class GoldenMatchInput {
   ///
   /// This finder must target a [RepaintBoundary].
   final Finder finder;
+
+  @override
+  String toString() {
+    return 'GoldenMatchInput{tester: $tester, configuration: $configuration, expand: $expand, scrollables: $scrollables, shrink: $shrink, finder: $finder}';
+  }
 }
 
 class GoldenInputMatcher extends AsyncMatcher {
@@ -250,7 +343,7 @@ class GoldenInputMatcher extends AsyncMatcher {
 
   @override
   Description describe(Description description) {
-    throw UnimplementedError();
+    return description.add('one widget whose rasterized images match golden images of "$name"');
   }
 
   @override
@@ -260,8 +353,6 @@ class GoldenInputMatcher extends AsyncMatcher {
     final List<GoldenMatchInput> inputs = item as List<GoldenMatchInput>;
 
     for (GoldenMatchInput input in inputs) {
-      await Goldens.configuration.primeAssets?.call(input.tester);
-
       if (input.shrink != null) {
         await input.tester.shrinkSurfaceWithinConstraints(input.shrink, input.configuration.constraints);
       } else if (input.scrollables != null) {
@@ -289,6 +380,7 @@ class GoldenInputMatcher extends AsyncMatcher {
       input.tester.binding.window.physicalSizeTestValue =
           input.tester.binding.renderView.size * input.configuration.pixelRatio;
 
+      await Goldens.configuration.primeAssets?.call(input.tester);
       await input.tester.pump();
 
       final String fileName = Goldens.configuration.fileNameFactory(name, input.configuration);
