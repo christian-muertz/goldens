@@ -204,6 +204,7 @@ class GoldenConfiguration {
   final double textScaleFactor;
   final Locale locale;
   final Orientation orientation;
+  // TODO add platform
 
   GoldenConfiguration looseHeight({double minHeight, double maxHeight}) {
     return copyWith(
