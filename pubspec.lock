@@ -54,7 +54,7 @@ packages:
     source: sdk
     version: "0.0.0"
   golden_toolkit:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: golden_toolkit
       url: "https://pub.dartlang.org"
