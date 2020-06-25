@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart';
+import 'package:golden_toolkit/golden_toolkit.dart';
 import 'package:test_api/src/frontend/async_matcher.dart';
 
 typedef FileNameFactory = String Function(String name, GoldenConfiguration configuration);
@@ -14,6 +15,7 @@ typedef AssetPrimer = Future<void> Function(WidgetTester tester);
 
 class Goldens {
   static GoldensConfiguration _configuration;
+
   static GoldensConfiguration get configuration {
     if (_configuration == null) {
       throw Exception('Please first configure goldens using Goldens.configure before calling this.');
@@ -22,9 +24,10 @@ class Goldens {
     return _configuration;
   }
 
-  static void configure(GoldensConfiguration configuration) {
+  static Future<void> configure(GoldensConfiguration configuration) async {
     _configuration = configuration;
 
+    await loadAppFonts();
     if (configuration.baseDir != null) {
       goldenFileComparator = _BaseDirComparator(configuration.baseDir);
     }
@@ -204,6 +207,7 @@ class GoldenConfiguration {
   final double textScaleFactor;
   final Locale locale;
   final Orientation orientation;
+
   // TODO add platform
 
   GoldenConfiguration looseHeight({double minHeight, double maxHeight}) {
@@ -401,6 +405,24 @@ class GoldenInputMatcher extends AsyncMatcher {
 
 GoldenInputMatcher matchesGoldens(String name) {
   return GoldenInputMatcher(name);
+}
+
+/// A [AssetPrimer] that waits for all images to be decoded.
+Future<void> waitForAllImages(WidgetTester tester) async {
+  final imageElements = find.byType(Image, skipOffstage: false).evaluate();
+  final boxElements = find.byType(DecoratedBox, skipOffstage: false).evaluate();
+  await tester.runAsync(() async {
+    for (final imageElement in imageElements) {
+      final widget = imageElement.widget as Image;
+      await precacheImage(widget.image, imageElement);
+    }
+    for (final boxElement in boxElements) {
+      final widget = boxElement.widget as DecoratedBox;
+      if (widget.decoration is! BoxDecoration) continue;
+      if ((widget.decoration as BoxDecoration).image?.image == null) continue;
+      await precacheImage((widget.decoration as BoxDecoration).image.image, boxElement);
+    }
+  });
 }
 
 // TODO goal: expect(tester.getGoldens([phone.looseHeight()], scrollables: [primaryScrollable]), matchGoldenFiles(name: 'stream'))
