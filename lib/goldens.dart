@@ -390,6 +390,7 @@ class GoldenInputMatcher extends AsyncMatcher {
 
       await Goldens.configuration.primeAssets?.call(input.tester);
       await input.tester.pump();
+      await input.tester.pump();
 
       final String fileName = Goldens.configuration.fileNameFactory(name, input.configuration);
       final String result = await matchesGoldenFile(fileName).matchAsync(effectiveFinder) as String;
