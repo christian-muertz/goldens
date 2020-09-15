@@ -414,13 +414,19 @@ Future<void> waitForAllImages(WidgetTester tester) async {
   await tester.runAsync(() async {
     for (final imageElement in imageElements) {
       final widget = imageElement.widget as Image;
-      await precacheImage(widget.image, imageElement);
+      await precacheImage(widget.image, imageElement, onError: (e, s) {
+        print('Precaching image for golden file tests failed: $e');
+        print(s);
+      });
     }
     for (final boxElement in boxElements) {
       final widget = boxElement.widget as DecoratedBox;
       if (widget.decoration is! BoxDecoration) continue;
       if ((widget.decoration as BoxDecoration).image?.image == null) continue;
-      await precacheImage((widget.decoration as BoxDecoration).image.image, boxElement);
+      await precacheImage((widget.decoration as BoxDecoration).image.image, boxElement, onError: (e, s) {
+        print('Precaching image for golden file tests failed: $e');
+        print(s);
+      });
     }
   });
 }
