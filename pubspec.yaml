@@ -1,6 +1,6 @@
 name: goldens
 description: A utility package to make golden file testing easier
-version: 0.0.2
+version: 0.0.2+1
 repository: https://github.com/christian-muertz/goldens
 
 environment:
