@@ -14,14 +14,14 @@ typedef FileNameFactory = String Function(String name, GoldenConfiguration confi
 typedef AssetPrimer = Future<void> Function(WidgetTester tester);
 
 class Goldens {
-  static GoldensConfiguration _configuration;
+  static GoldensConfiguration? _configuration;
 
   static GoldensConfiguration get configuration {
     if (_configuration == null) {
       throw Exception('Please first configure goldens using Goldens.configure before calling this.');
     }
 
-    return _configuration;
+    return _configuration!;
   }
 
   static Future<void> configure(GoldensConfiguration configuration) async {
@@ -29,7 +29,7 @@ class Goldens {
 
     await loadAppFonts();
     if (configuration.baseDir != null) {
-      goldenFileComparator = _BaseDirComparator(configuration.baseDir);
+      goldenFileComparator = _BaseDirComparator(configuration.baseDir!);
     }
   }
 }
@@ -77,9 +77,9 @@ class GoldensConfiguration {
     this.primeAssets,
   });
 
-  final Uri baseDir;
-  final FileNameFactory fileNameFactory;
-  final AssetPrimer primeAssets;
+  final Uri? baseDir;
+  final FileNameFactory? fileNameFactory;
+  final AssetPrimer? primeAssets;
 }
 
 /// TestAssetBundle is required in order to avoid issues with large assets
@@ -91,9 +91,6 @@ class TestAssetBundle extends CachingAssetBundle {
   Future<String> loadString(String key, {bool cache = true}) async {
     //overriding this method to avoid limit of 10KB per asset
     final ByteData data = await load(key);
-    if (data == null) {
-      throw FlutterError('Unable to load asset, data is null: $key');
-    }
     return utf8.decode(data.buffer.asUint8List());
   }
 
@@ -155,11 +152,11 @@ extension GoldenWidgetTester on WidgetTester {
 
   /// Creates a list of actual [GoldenMatchInput]s from a list of [GoldenConfiguration]s.
   List<GoldenMatchInput> getGoldens({
-    @required List<GoldenConfiguration> configurations,
-    bool expand,
-    List<ScrollableState> scrollables,
-    Finder shrink,
-    Finder finder,
+    required List<GoldenConfiguration> configurations,
+    bool? expand,
+    List<ScrollableState>? scrollables,
+    Finder? shrink,
+    Finder? finder,
   }) {
     assert(shrink == null || expand != true, 'Shrinking and expanding at the same time makes to sense');
 
@@ -185,7 +182,7 @@ enum Orientation { portrait, landscape }
 /// [pixelRation] and the currently set [textScaleFactor].
 class GoldenConfiguration {
   GoldenConfiguration({
-    this.name,
+    required this.name,
     this.constraints,
     this.pixelRatio,
     this.textScaleFactor,
@@ -200,35 +197,35 @@ class GoldenConfiguration {
   /// The size of the output file is guaranteed to be in this constraints.
   /// If you specify [expand] and have any [Scrollable]s that are infinite, this constraints must be
   /// bounded and cannot be unconstrained.
-  final BoxConstraints constraints;
+  final BoxConstraints? constraints;
 
   // TODO document the following properties
-  final double pixelRatio;
-  final double textScaleFactor;
-  final Locale locale;
-  final Orientation orientation;
+  final double? pixelRatio;
+  final double? textScaleFactor;
+  final Locale? locale;
+  final Orientation? orientation;
 
   // TODO add platform
 
-  GoldenConfiguration looseHeight({double minHeight, double maxHeight}) {
+  GoldenConfiguration looseHeight({double? minHeight, double? maxHeight}) {
     return copyWith(
-      constraints: constraints.copyWith(minHeight: minHeight ?? 0, maxHeight: maxHeight ?? double.infinity),
+      constraints: constraints!.copyWith(minHeight: minHeight ?? 0, maxHeight: maxHeight ?? double.infinity),
     );
   }
 
-  GoldenConfiguration looseWidth({double minWidth, double minHeight}) {
+  GoldenConfiguration looseWidth({double? minWidth, double? minHeight}) {
     return copyWith(
-      constraints: constraints.copyWith(minWidth: minWidth ?? 0, minHeight: minHeight ?? double.infinity),
+      constraints: constraints!.copyWith(minWidth: minWidth ?? 0, minHeight: minHeight ?? double.infinity),
     );
   }
 
   GoldenConfiguration copyWith({
-    String name,
-    BoxConstraints constraints,
-    double pixelRatio,
-    double textScaleFactor,
-    Locale locale,
-    Orientation orientation,
+    String? name,
+    BoxConstraints? constraints,
+    double? pixelRatio,
+    double? textScaleFactor,
+    Locale? locale,
+    Orientation? orientation,
   }) {
     return GoldenConfiguration(
       name: name ?? this.name,
@@ -243,11 +240,11 @@ class GoldenConfiguration {
 
 class GoldenDevice extends GoldenConfiguration {
   GoldenDevice({
-    String name,
-    BoxConstraints constraints,
-    double pixelRatio,
-    double textScaleFactor,
-    Locale locale,
+    required String name,
+    BoxConstraints? constraints,
+    double? pixelRatio,
+    double? textScaleFactor,
+    Locale? locale,
     this.orientation,
   }) : super(
           name: name,
@@ -257,33 +254,33 @@ class GoldenDevice extends GoldenConfiguration {
           locale: locale,
         );
 
-  final Orientation orientation;
+  final Orientation? orientation;
 
   GoldenDevice portrait() {
-    assert(constraints.isTight);
+    assert(constraints!.isTight);
 
-    final double width = constraints.smallest.shortestSide;
-    final double height = constraints.smallest.longestSide;
+    final double width = constraints!.smallest.shortestSide;
+    final double height = constraints!.smallest.longestSide;
 
-    return copyWith(constraints: BoxConstraints.tight(Size(width, height)), orientation: Orientation.portrait);
+    return copyWith(constraints: BoxConstraints.tight(Size(width, height)), orientation: Orientation.portrait) as GoldenDevice;
   }
 
   GoldenDevice landscape() {
-    assert(constraints.isTight);
+    assert(constraints!.isTight);
 
-    final double width = constraints.smallest.longestSide;
-    final double height = constraints.smallest.shortestSide;
+    final double width = constraints!.smallest.longestSide;
+    final double height = constraints!.smallest.shortestSide;
 
-    return copyWith(constraints: BoxConstraints.tight(Size(width, height)), orientation: Orientation.landscape);
+    return copyWith(constraints: BoxConstraints.tight(Size(width, height)), orientation: Orientation.landscape) as GoldenDevice;
   }
 
   GoldenConfiguration copyWith({
-    String name,
-    BoxConstraints constraints,
-    double pixelRatio,
-    double textScaleFactor,
-    Locale locale,
-    Orientation orientation,
+    String? name,
+    BoxConstraints? constraints,
+    double? pixelRatio,
+    double? textScaleFactor,
+    Locale? locale,
+    Orientation? orientation,
   }) {
     return GoldenDevice(
       name: name ?? this.name,
@@ -308,32 +305,32 @@ class GoldenMatchInput {
   });
 
   /// The widget tester that spit out this object.
-  final WidgetTester tester;
+  final WidgetTester? tester;
 
   /// The configuration which should used for the test.
-  final GoldenConfiguration configuration;
+  final GoldenConfiguration? configuration;
 
   /// Whether to expand scrollables.
   ///
   /// To limit the list of scrollables that are expanded specify [scrollables].
   ///
   /// You can either specify [expand] or [shrink].
-  final bool expand;
+  final bool? expand;
 
   /// A list of scrollables used to expand the testing surface.
   ///
   /// This list is only considered if [expand] is set to true.
-  final List<ScrollableState> scrollables;
+  final List<ScrollableState>? scrollables;
 
   /// The finder which should be used to shrink the testing surface to.
   ///
   /// You can either specify [expand] or [shrink].
-  final Finder shrink;
+  final Finder? shrink;
 
   /// The finder which is used to compare to the golden file.
   ///
   /// This finder must target a [RepaintBoundary].
-  final Finder finder;
+  final Finder? finder;
 
   @override
   String toString() {
@@ -352,19 +349,19 @@ class GoldenInputMatcher extends AsyncMatcher {
   }
 
   @override
-  Future<String> matchAsync(dynamic item) async {
+  Future<String?> matchAsync(dynamic item) async {
     assert(item is List<GoldenMatchInput>);
 
     final List<GoldenMatchInput> inputs = item as List<GoldenMatchInput>;
 
     for (GoldenMatchInput input in inputs) {
       // We prime once before layout here and once after.
-      await Goldens.configuration.primeAssets?.call(input.tester);
+      await Goldens.configuration.primeAssets?.call(input.tester!);
 
       if (input.shrink != null) {
-        await input.tester.shrinkSurfaceWithinConstraints(input.shrink, input.configuration.constraints);
+        await input.tester!.shrinkSurfaceWithinConstraints(input.shrink!, input.configuration!.constraints!);
       } else if (input.scrollables != null) {
-        await input.tester.expandSurfaceWithinConstraints(input.scrollables, input.configuration.constraints);
+        await input.tester!.expandSurfaceWithinConstraints(input.scrollables!, input.configuration!.constraints!);
       } else {
         final List<ScrollableState> scrollableStates = find
             .byType(Scrollable, skipOffstage: false)
@@ -374,7 +371,7 @@ class GoldenInputMatcher extends AsyncMatcher {
             })
             .where((ScrollableState scrollableState) => scrollableState.position.extentAfter.isFinite)
             .toList(growable: false);
-        await input.tester.expandSurfaceWithinConstraints(scrollableStates, input.configuration.constraints);
+        await input.tester!.expandSurfaceWithinConstraints(scrollableStates, input.configuration!.constraints!);
       }
 
       final Finder effectiveFinder =
@@ -382,18 +379,18 @@ class GoldenInputMatcher extends AsyncMatcher {
 
       // TODO setting the device pixel ratio is sometimes useless
       // Tracked at https://github.com/flutter/flutter/issues/58226
-      input.tester.binding.window.devicePixelRatioTestValue = input.configuration.pixelRatio;
+      input.tester!.binding.window.devicePixelRatioTestValue = input.configuration!.pixelRatio!;
 
       // Calculate window size based on the render view size
-      input.tester.binding.window.physicalSizeTestValue =
-          input.tester.binding.renderView.size * input.configuration.pixelRatio;
+      input.tester!.binding.window.physicalSizeTestValue =
+          input.tester!.binding.renderView.size * input.configuration!.pixelRatio!;
 
-      await Goldens.configuration.primeAssets?.call(input.tester);
-      await input.tester.pump();
-      await input.tester.pump();
+      await Goldens.configuration.primeAssets?.call(input.tester!);
+      await input.tester!.pump();
+      await input.tester!.pump();
 
-      final String fileName = Goldens.configuration.fileNameFactory(name, input.configuration);
-      final String result = await matchesGoldenFile(fileName).matchAsync(effectiveFinder) as String;
+      final String fileName = Goldens.configuration.fileNameFactory!(name, input.configuration!);
+      final String? result = await matchesGoldenFile(fileName).matchAsync(effectiveFinder) as String?;
 
       if (result != null) {
         return result;
@@ -424,7 +421,7 @@ Future<void> waitForAllImages(WidgetTester tester) async {
       final widget = boxElement.widget as DecoratedBox;
       if (widget.decoration is! BoxDecoration) continue;
       if ((widget.decoration as BoxDecoration).image?.image == null) continue;
-      await precacheImage((widget.decoration as BoxDecoration).image.image, boxElement, onError: (e, s) {
+      await precacheImage((widget.decoration as BoxDecoration).image!.image, boxElement, onError: (e, s) {
         print('Precaching image for golden file tests failed: $e');
         print(s);
       });
