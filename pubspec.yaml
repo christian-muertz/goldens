@@ -1,6 +1,6 @@
 name: goldens
 description: A utility package to make golden file testing easier
-version: 0.0.6+1
+version: 0.0.6+2
 repository: https://github.com/christian-muertz/goldens
 
 environment:
@@ -23,7 +23,7 @@ flutter:
   uses-material-design: true
 
   # To add assets to your package, add an assets section, like this:
-  assets:
+#  assets:
   #   - images/a_dot_ham.jpeg
   #
   # For details regarding assets in packages, see
