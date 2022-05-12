@@ -8,7 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart';
 import 'package:golden_toolkit/golden_toolkit.dart';
-import 'package:test_api/src/frontend/async_matcher.dart';
+import 'package:test_api/src/expect/async_matcher.dart';
 
 typedef FileNameFactory = String Function(String name, GoldenConfiguration configuration);
 typedef AssetPrimer = Future<void> Function(WidgetTester tester);
